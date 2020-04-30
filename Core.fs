@@ -4,7 +4,6 @@ open System
 open Hopac
 open Neo4j.Driver
 open System.Collections.Generic
-open Flux
 
 module internal ValueOption =
 
