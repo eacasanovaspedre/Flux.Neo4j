@@ -1,0 +1,6 @@
+FSharp.Core
+Flux.Core
+Hopac
+Neo4j.Driver
+Neo4j.Driver.Simple
+Neo4j.Driver.Reactive

@@ -1,0 +1,9 @@
+source https://api.nuget.org/v3/index.json
+
+storage: none
+nuget FSharp.Core
+nuget Flux.Core
+nuget Hopac
+nuget Neo4j.Driver
+nuget Neo4j.Driver.Simple
+nuget Neo4j.Driver.Reactive
