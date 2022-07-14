@@ -34,8 +34,6 @@ jobs:
       run: dotnet tool restore
     - name: Build
       run: dotnet build -c Release
-    - name: Test
-      run: dotnet run -c Release -p "${{env.PROJECT_NAME}}.Test/${{env.PROJECT_NAME}}.Test.fsproj"
   
   publish:
     needs: build
