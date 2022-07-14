@@ -7,14 +7,15 @@ open System.Collections.Generic
 
 module internal ValueOption =
 
-    let ofPair (r, v) =
-        if r then ValueSome v else ValueNone
+    let ofPair (r, v) = if r then ValueSome v else ValueNone
 
 module Driver =
 
-    let create' uri auth conf = GraphDatabase.Driver(uri :> Uri, auth, Action<_> conf)
+    let create' uri auth conf =
+        GraphDatabase.Driver(uri :> Uri, auth, Action<_> conf)
 
-    let create uri auth = GraphDatabase.Driver(uri :> Uri, auth :> IAuthToken)
+    let create uri auth =
+        GraphDatabase.Driver(uri :> Uri, auth :> IAuthToken)
 
 module internal SimpleQuery =
 
@@ -25,12 +26,11 @@ module internal SimpleQuery =
 module internal AsyncQuery =
 
     let inline runAsync (query: Query) (queryRunner: IAsyncQueryRunner) =
-        query
-        |> queryRunner.RunAsync
-        |> Job.awaitTask
+        query |> queryRunner.RunAsync |> Job.awaitTask
 
     let inline runAsync' (query: Query) conf (session: IAsyncSession) =
-        session.RunAsync(query, Action<_> conf) |> Job.awaitTask
+        session.RunAsync(query, Action<_> conf)
+        |> Job.awaitTask
 
 module internal RxQuery =
 
@@ -77,8 +77,7 @@ module Session =
     let beginTransaction (session: ISession) = session.BeginTransaction()
 
     let beginTransaction' conf (session: ISession) =
-        Action<_> conf
-        |> session.BeginTransaction
+        Action<_> conf |> session.BeginTransaction
 
     let readTransaction work (session: ISession) =
         (Func<_, _>(work >> startAsTask))
@@ -86,7 +85,8 @@ module Session =
         |> Job.awaitTask
 
     let readTransaction' conf work (session: ISession) =
-        session.ReadTransaction(Func<_, _>(work >> startAsTask), Action<_> conf) |> Job.awaitTask
+        session.ReadTransaction(Func<_, _>(work >> startAsTask), Action<_> conf)
+        |> Job.awaitTask
 
     let writeTransaction work (session: ISession) =
         (Func<_, _>(work >> startAsTask))
@@ -94,7 +94,8 @@ module Session =
         |> Job.awaitTask
 
     let writeTransaction' conf work (session: ISession) =
-        session.WriteTransaction(Func<_, _>(work >> startAsTask), Action<_> conf) |> Job.awaitTask
+        session.WriteTransaction(Func<_, _>(work >> startAsTask), Action<_> conf)
+        |> Job.awaitTask
 
     let lastBookmark (session: ISession) = session.LastBookmark
 
@@ -108,14 +109,16 @@ module AsyncSession =
 
     let create (driver: IDriver) = driver.AsyncSession()
 
-    let beginTransactionAsync (session: IAsyncSession) = session.BeginTransactionAsync() |> Job.awaitTask
+    let beginTransactionAsync (session: IAsyncSession) =
+        session.BeginTransactionAsync() |> Job.awaitTask
 
     let beginTransactionAsync' conf (session: IAsyncSession) =
         Action<_> conf
         |> session.BeginTransactionAsync
         |> Job.awaitTask
 
-    let closeAsync (session: IAsyncSession) = session.CloseAsync() |> Job.awaitUnitTask
+    let closeAsync (session: IAsyncSession) =
+        session.CloseAsync() |> Job.awaitUnitTask
 
     let readTransactionAsync work (session: IAsyncSession) =
         (Func<_, _>(work >> startAsTask))
@@ -123,7 +126,8 @@ module AsyncSession =
         |> Job.awaitTask
 
     let readTransactionAsync' conf work (session: IAsyncSession) =
-        session.ReadTransactionAsync(Func<_, _>(work >> startAsTask), Action<_> conf) |> Job.awaitTask
+        session.ReadTransactionAsync(Func<_, _>(work >> startAsTask), Action<_> conf)
+        |> Job.awaitTask
 
     let writeTransactionAsync work (session: IAsyncSession) =
         (Func<_, _>(work >> startAsTask))
@@ -131,7 +135,8 @@ module AsyncSession =
         |> Job.awaitTask
 
     let writeTransactionAsync' conf work (session: IAsyncSession) =
-        session.WriteTransactionAsync(Func<_, _>(work >> startAsTask), Action<_> conf) |> Job.awaitTask
+        session.WriteTransactionAsync(Func<_, _>(work >> startAsTask), Action<_> conf)
+        |> Job.awaitTask
 
     let lastBookmark (session: IAsyncSession) = session.LastBookmark
 
@@ -147,17 +152,22 @@ module RxSession =
 
     let beginTransactionRx (session: IRxSession) = session.BeginTransaction()
 
-    let beginTransactionRx' conf (session: IRxSession) = Action<_> conf |> session.BeginTransaction
+    let beginTransactionRx' conf (session: IRxSession) =
+        Action<_> conf |> session.BeginTransaction
 
     let closeRx (session: IRxSession) = session.Close()
 
-    let readTransactionRx work (session: IRxSession) = (Func<_, _> work) |> session.ReadTransaction
+    let readTransactionRx work (session: IRxSession) =
+        (Func<_, _> work) |> session.ReadTransaction
 
-    let readTransactionRx' conf work (session: IRxSession) = session.ReadTransaction(Func<_, _> work, Action<_> conf)
+    let readTransactionRx' conf work (session: IRxSession) =
+        session.ReadTransaction(Func<_, _> work, Action<_> conf)
 
-    let writeTransactionRx work (session: IRxSession) = (Func<_, _> work) |> session.WriteTransaction
+    let writeTransactionRx work (session: IRxSession) =
+        (Func<_, _> work) |> session.WriteTransaction
 
-    let writeTransactionRx' conf work (session: IRxSession) = session.WriteTransaction(Func<_, _> work, Action<_> conf)
+    let writeTransactionRx' conf work (session: IRxSession) =
+        session.WriteTransaction(Func<_, _> work, Action<_> conf)
 
     let lastBookmark (session: IRxSession) = session.LastBookmark
 
@@ -181,26 +191,25 @@ module ResultCursor =
         |> fetchAsync
         |> Job.map (fun r ->
             if r then
-                cursor
-                |> currentRecord
-                |> ValueSome
+                cursor |> currentRecord |> ValueSome
             else
                 ValueNone)
 
     let toSeq (cursor: IResultCursor) =
-        let enumerator() =
+        let enumerator () =
             { new IEnumerator<IRecord> with
-                member __.Reset(): unit = invalidOp "Cannot reset IResultCursor"
+                member __.Reset() : unit = invalidOp "Cannot reset IResultCursor"
+
                 member __.Current: IRecord = currentRecord cursor
+
                 member __.Current: obj = upcast currentRecord cursor
-                member __.Dispose(): unit = ()
-                member __.MoveNext(): bool =
-                    cursor
-                    |> fetchAsync
-                    |> run }
+
+                member __.Dispose() : unit = ()
+                member __.MoveNext() : bool = cursor |> fetchAsync |> run }
+
         { new IEnumerable<IRecord> with
-            member __.GetEnumerator(): Collections.IEnumerator = upcast enumerator()
-            member __.GetEnumerator(): IEnumerator<IRecord> = enumerator() }
+            member __.GetEnumerator() : Collections.IEnumerator = upcast enumerator ()
+            member __.GetEnumerator() : IEnumerator<IRecord> = enumerator () }
 
 module RxResult =
     let inline keys (result: IRxResult) = result.Keys()
@@ -231,10 +240,7 @@ module Property =
     let rec ofObj (obj: obj) =
         match obj with
         | x when isNull x -> Null
-        | :? (obj seq) as v ->
-            v
-            |> Seq.map ofObj
-            |> List
+        | :? (obj seq) as v -> v |> Seq.map ofObj |> List
         | :? IDictionary<string, obj> as v -> Map v
         | :? bool as v -> Boolean v
         | :? int64 as v -> Integer v
@@ -256,11 +262,7 @@ module Property =
     let tryOfObj (obj: obj) =
         match obj with
         | x when isNull x -> ValueSome(Null)
-        | :? (obj seq) as v ->
-            v
-            |> Seq.map ofObj
-            |> List
-            |> ValueSome
+        | :? (obj seq) as v -> v |> Seq.map ofObj |> List |> ValueSome
         | :? IDictionary<string, obj> as v -> ValueSome(Map v)
         | :? bool as v -> ValueSome(Boolean v)
         | :? int64 as v -> ValueSome(Integer v)
@@ -276,10 +278,23 @@ module Property =
         | :? Point as v -> ValueSome(Point v)
         | _ -> ValueNone
 
-    let mapTryFind key (map: IDictionary<_, _>) =
-        key
-        |> map.TryGetValue
-        |> ValueOption.ofPair
+    let rec toObj property : obj =
+        match property with
+        | Null -> null
+        | List values -> values |> Seq.map toObj |> box
+        | Map map -> map
+        | Boolean v -> v
+        | Integer v -> v
+        | Float v -> v
+        | String v -> v
+        | ByteArray v -> v
+        | Date v -> v
+        | Time v -> v
+        | LocalTime v -> v
+        | DateTime v -> v
+        | LocalDateTime v -> v
+        | Duration v -> v
+        | Point v -> v
 
 module Node =
     let id' (node: INode) = node.Id
@@ -326,45 +341,53 @@ module Path =
         | :? IPath as path -> ValueSome path
         | _ -> ValueNone
 
-type RecordValue =
-    | Node of INode
-    | Relationship of IRelationship
-    | Path of IPath
-    | Property of Property
-
-module RecordValue =
-
-    let ofObj raw =
-        let c1() =
-            raw
-            |> Property.tryOfObj
-            |> ValueOption.map Property
-
-        let c2() =
-            raw
-            |> Node.tryOfObj
-            |> ValueOption.map Node
-
-        let c3() =
-            raw
-            |> Relationship.tryOfObj
-            |> ValueOption.map Relationship
-
-        let c4() =
-            raw
-            |> Path.tryOfObj
-            |> ValueOption.map Path
-
-        c1()
-        |> ValueOption.orElseWith (c2 >> ValueOption.orElseWith (c3 >> ValueOption.orElseWith c4))
-        |> ValueOption.defaultWith (fun _ ->
-            raw.GetType().FullName
-            |> sprintf "Unknown record value type: %s"
-            |> failwith)
-
 module Record =
 
     let tryFind key (record: IRecord) =
         key
         |> record.Values.TryGetValue
         |> ValueOption.ofPair
+
+    let tryOfObj (obj: obj) =
+        match obj with
+        | :? IRecord as record -> ValueSome record
+        | _ -> ValueNone
+
+type RecordValue =
+    | Node of INode
+    | Relationship of IRelationship
+    | Path of IPath
+    | Property of Property
+    | Record of IRecord
+
+module RecordValue =
+
+    let ofObj raw =
+        let tryProperty () =
+            raw
+            |> Property.tryOfObj
+            |> ValueOption.map Property
+
+        let tryNode () =
+            raw |> Node.tryOfObj |> ValueOption.map Node
+
+        let tryRelationship () =
+            raw
+            |> Relationship.tryOfObj
+            |> ValueOption.map Relationship
+
+        let tryPath () =
+            raw |> Path.tryOfObj |> ValueOption.map Path
+
+        let tryRecord () =
+            raw |> Record.tryOfObj |> ValueOption.map Record
+
+        tryProperty ()
+        |> ValueOption.orElseWith (
+            tryNode
+            >> ValueOption.orElseWith (
+                tryRelationship
+                >> ValueOption.orElseWith (tryPath >> ValueOption.orElseWith tryRecord)
+            )
+        )
+        |> ValueOption.defaultWith (fun _ -> failwith $"Unknown record value type: %s{raw.GetType().FullName}")
